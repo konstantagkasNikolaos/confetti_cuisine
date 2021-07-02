@@ -12,7 +12,6 @@ const expressSession = require("express-session");
 //Import controllers
 const homeController = require("./controllers/HomeController");
 const errorController = require("./controllers/ErrorController");
-const subscriptionController = require("./controllers/subscriptionController");
 const coursesController = require("./controllers/coursesController");
 const loginController = require("./controllers/loginController");
 const usersController = require("./controllers/usersController");
@@ -78,7 +77,7 @@ router
     subscribersController.index,
     subscribersController.indexView
   )
-  .get("/subscribers/new", subscribersController.new)
+  .get("/subscribers/new", subscribersController.new) //TODO where do i use it in UI?
   .post(
     "/subscribers/create",
     subscribersController.create,
@@ -101,21 +100,38 @@ router
     subscribersController.showView
   )
 
-  .get("/courses", coursesController.showCourses)
-  .get("/courses/new", coursesController.newCourse)
-  .post("/courses/create", coursesController.createCourse)
-  .get("/courses/:id", coursesController.showCourseDetails)
-  .get("/courses/:id/edit", coursesController.editCourse)
-  .put("/courses/:id/update", coursesController.updateCourse)
-  .delete("/courses/:id/delete", coursesController.deleteCourse)
+  .get("/courses", coursesController.index, coursesController.indexView)
+  .get("/courses/new", coursesController.new)
+  .post(
+    "/courses/create",
+    coursesController.create,
+    coursesController.redirectView
+  )
+  .get("/courses/:id/edit", coursesController.edit)
+  .put(
+    "/courses/:id/update",
+    coursesController.update,
+    coursesController.redirectView
+  )
+  .delete(
+    "/courses/:id/delete",
+    coursesController.delete,
+    coursesController.redirectView
+  )
+  .get("/courses/:id", coursesController.show, coursesController.showView)
+
+  //TODO where is it used?
+  //router.post("/subscribe", subscribersController.saveSubscriber);
 
   .get("/login", loginController.loginForm)
   .post("/login", loginController.Authenticate)
 
-  .use(errorController.pageNotFoundError)
-  .use(errorController.internalServerError);
+  .use(errorController.logErrors)
+  .use(errorController.respondNoResourceFound)
+  .use(errorController.respondInternalError);
 
 app.use("/", router);
+
 app.listen(app.get("port"), () => {
   console.log(`Server running at http://localhost:${app.get("port")}`);
 });

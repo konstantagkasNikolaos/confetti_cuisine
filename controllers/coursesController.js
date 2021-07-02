@@ -1,102 +1,115 @@
-const courses = require("../models/course.model");
+const courses = require("../models/courses.model");
 
-exports.showCourses = (req, res) => {
-  courses.getAllCourses((err, data) => {
-    if (err) {
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while retrieving customers.",
+module.exports = {
+  index: (req, res, next) => {
+    courses
+      .getAllCourses()
+      .then((courses) => {
+        res.locals.courses = courses;
+        next();
+      })
+      .catch((error) => {
+        console.log(`Error fetching courses: ${error.message}`);
+        next(error);
       });
-    } else {
-      res.render("courses/index", {
-        courses: data,
+  },
+
+  indexView: (req, res) => {
+    res.render("courses/index");
+  },
+
+  new: (req, res) => {
+    res.render("courses/new");
+  },
+
+  create: (req, res, next) => {
+    const course = {
+      title: req.body.title,
+      description: req.body.description,
+      max_students: req.body.max_students,
+      cost: req.body.cost,
+    };
+    courses
+      .create(course)
+      .then((course) => {
+        res.locals.redirect = "/courses";
+        res.locals.course = course;
+        next();
+      })
+      .catch((error) => {
+        console.log(`Error saving course: ${error.message}`);
+        next(error);
       });
-    }
-    return;
-  });
-};
+  },
 
-exports.showCourseDetails = (req, res) => {
-  courses.findById(req.params.id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send("not found");
-      } else {
-        res.status(500).send("error");
-      }
-    } else {
-      res.render("courses/show", {
-        course: data,
+  show: (req, res, next) => {
+    courses
+      .findById(req.params.id)
+      .then((course) => {
+        res.locals.course = course[0];
+        next();
+      })
+      .catch((error) => {
+        console.log(`Error fetching course by ID: ${error.message}`);
+        next(error);
       });
-    }
-  });
-};
+  },
 
-exports.editCourse = (req, res) => {
-  courses.findById(req.params.id, (err, data) => {
-    if (err) {
-      if (err.kind === "not_found") {
-        res.status(404).send("not found");
-      } else {
-        res.status(500).send("error");
-      }
-    } else {
-      res.render("courses/edit", {
-        course: data,
+  showView: (req, res) => {
+    res.render("courses/show");
+  },
+
+  edit: (req, res, next) => {
+    courses
+      .findById(req.params.id)
+      .then((course) => {
+        res.render("courses/edit", {
+          course: course[0],
+        });
+      })
+      .catch((error) => {
+        console.log(`Error fetching course by ID: ${error.message}`);
+        next(error);
       });
-    }
-  });
-};
+  },
 
-exports.updateCourse = (req, res) => {
-  courses.updateCourseById(
-    req.params.id,
-    new courses(req.body),
-    (err, data) => {
-      if (err) {
-        if (err.kind === "not_found") {
-          res.status(404).send({
-            message: `Not found Course with id:${req.params.id}.`,
-          });
-        } else {
-          res.status(500).send({
-            message: `Error updating Course with id:${req.params.id}`,
-          });
-        }
-      } else {
-        res.redirect("/courses");
-      }
-    }
-  );
-};
+  update: (req, res, next) => {
+    course = {
+      title: req.body.title,
+      description: req.body.description,
+      max_students: req.body.max_students,
+      cost: req.body.cost,
+    };
 
-exports.deleteCourse = (req, res) => {
-  courses.deleteById(req.params.id, (err, data) => {
-    res.redirect("/courses");
-  });
-};
-
-exports.newCourse = (req, res) => {
-  res.render("courses/new");
-};
-
-exports.createCourse = (req, res) => {
-  const course = new courses({
-    title: req.body.title,
-    description: req.body.description,
-    max_students: req.body.max_students,
-    cost: req.body.cost,
-  });
-
-  courses.createCourse(course, (err, data) => {
-    if (err) {
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while creating the Customer.",
+    courses
+      .update(req.params.id, course)
+      .then((course) => {
+        res.locals.redirect = `/courses/${req.params.id}`;
+        res.locals.course = course;
+        next();
+      })
+      .catch((error) => {
+        console.log(`Error updating course by ID: ${error.message}`);
+        next(error);
       });
-    } else {
-      req.flash("success", `Success on making ${data.title} course`);
-      res.redirect("/courses");
-    }
-  });
+  },
+
+  delete: (req, res, next) => {
+    courses
+      .delete(req.params.id)
+      .then(() => {
+        res.locals.redirect = "/courses";
+        next();
+      })
+      .catch((error) => {
+        console.log(`Error deleting course by ID: ${error.message}`);
+        next();
+      });
+  },
+
+  redirectView: (req, res, next) => {
+    let redirectPath = res.locals.redirect;
+    if (redirectPath !== undefined) res.redirect(redirectPath);
+    else next();
+  },
 };
