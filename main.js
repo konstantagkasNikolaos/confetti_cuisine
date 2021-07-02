@@ -16,6 +16,7 @@ const subscriptionController = require("./controllers/subscriptionController");
 const coursesController = require("./controllers/coursesController");
 const loginController = require("./controllers/loginController");
 const usersController = require("./controllers/usersController");
+const subscribersController = require("./controllers/subscribersController");
 
 app.set("port", process.env.PORT || 3000);
 app.set("view engine", "ejs");
@@ -72,6 +73,34 @@ router
   )
   .get("/users/:id", usersController.show)
 
+  .get(
+    "/subscribers",
+    subscribersController.index,
+    subscribersController.indexView
+  )
+  .get("/subscribers/new", subscribersController.new)
+  .post(
+    "/subscribers/create",
+    subscribersController.create,
+    subscribersController.redirectView
+  )
+  .get("/subscribers/:id/edit", subscribersController.edit)
+  .put(
+    "/subscribers/:id/update",
+    subscribersController.update,
+    subscribersController.redirectView
+  )
+  .delete(
+    "/subscribers/:id/delete",
+    subscribersController.delete,
+    subscribersController.redirectView
+  )
+  .get(
+    "/subscribers/:id",
+    subscribersController.show,
+    subscribersController.showView
+  )
+
   .get("/courses", coursesController.showCourses)
   .get("/courses/new", coursesController.newCourse)
   .post("/courses/create", coursesController.createCourse)
@@ -79,10 +108,10 @@ router
   .get("/courses/:id/edit", coursesController.editCourse)
   .put("/courses/:id/update", coursesController.updateCourse)
   .delete("/courses/:id/delete", coursesController.deleteCourse)
-  .post("/subscriber", subscriptionController.create)
-  .get("/users", subscriptionController.getAllSubscribers)
+
   .get("/login", loginController.loginForm)
   .post("/login", loginController.Authenticate)
+
   .use(errorController.pageNotFoundError)
   .use(errorController.internalServerError);
 

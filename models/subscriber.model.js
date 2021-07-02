@@ -1,38 +1,59 @@
 const sql = require("../db");
 
-//constructor thelei upoxrewtika to function gia na to thewrisei constructror
 const subscribers = function (subs) {
   this.id = subs.id;
   this.name = subs.name;
   this.email = subs.email;
-  this.zipcode = subs.zipcode;
+  this.zipCode = subs.zipCode;
 };
 
-subscribers.getAll = (result) => {
-  sql.query("SELECT * FROM subscriptionschema", (err, res) => {
-    if (err) {
-      console.log("error: ", err);
-      result(null, err);
-      return;
-    }
-    result(null, res);
+subscribers.getAllSubscribers = () => {
+  return new Promise((resolve, reject) => {
+    sql.query("SELECT * FROM subscribers", (err, subscribers) => {
+      if (err) reject(err);
+      resolve(subscribers);
+    });
   });
 };
 
-subscribers.create = (newSubscriber, result) => {
-  sql.query(
-    "INSERT INTO subscriptionschema SET ?",
-    newSubscriber,
-    (err, res) => {
-      if (err) {
-        console.log("error:", err);
-        result(err, null);
-        return;
+subscribers.create = (subscriber) => {
+  return new Promise((resolve, reject) => {
+    sql.query("INSERT INTO subscribers SET ?", subscriber, (err, res) => {
+      if (err) reject(err);
+      resolve(res);
+    });
+  });
+};
+
+subscribers.findById = (id) => {
+  return new Promise((resolve, reject) => {
+    sql.query("SELECT * FROM subscribers WHERE id = ?", id, (err, res) => {
+      if (err) reject(err);
+      resolve(res);
+    });
+  });
+};
+
+subscribers.update = (id, subscriber) => {
+  return new Promise((resolve, reject) => {
+    sql.query(
+      "UPDATE subscribers SET name = ?, email = ?, zipCode = ? WHERE id = ?",
+      [subscriber.name, subscriber.email, subscriber.zipCode, id],
+      (err, res) => {
+        if (err) reject(err);
+        resolve(res);
       }
-      console.log("created customer:", { id: res.insertId, ...newSubscriber });
-      result(null, { id: res.insertId, ...newSubscriber });
-    }
-  );
+    );
+  });
+};
+
+subscribers.delete = (id) => {
+  return new Promise((resolve, reject) => {
+    sql.query("DELETE FROM subscribers WHERE id = ?", id, (err, res) => {
+      if (err) reject(err);
+      resolve(res);
+    });
+  });
 };
 
 module.exports = subscribers;
