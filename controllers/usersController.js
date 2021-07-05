@@ -18,7 +18,11 @@ module.exports = {
   },
 
   indexView: (req, res) => {
-    res.render("users/index");
+    if (req.query.format === "json") {
+      res.json(res.locals.users);
+    } else {
+      res.render("users/index");
+    }
   },
 
   new: (req, res) => {
@@ -34,14 +38,23 @@ module.exports = {
       zipCode: req.body.zipCode,
     });
 
+    //TODO if email exists error
     Users.create(newUser)
-      .then((user) => {
+      .then((response) => {
+        req.flash(
+          "success",
+          `${response.user}'s account created successfully!`
+        );
         res.locals.redirect = "/users";
-        res.locals.user = user;
+        res.locals.user = response;
         next();
       })
       .catch((err) => {
         console.log(`Error saving user: ${err}`);
+        req.flash(
+          "error",
+          `Failed to create user account beacause :${err.message}`
+        );
         next(err);
       });
   },
@@ -110,6 +123,41 @@ module.exports = {
       .catch((err) => {
         console.log(`Error deleting user by ID: ${err.message}`);
         next();
+      });
+  },
+
+  login: (req, res) => {
+    res.render("users/login");
+  },
+
+  authenticate: (req, res, next) => {
+    Users.findByEmail(req.body.email)
+      .then((user) => {
+        user = user[0];
+        Users.passwordComparison(req.body.password, user.password).then(
+          (comparison) => {
+            if (comparison) {
+              res.locals.redirect = `/users/${user.id}`;
+              req.flash(
+                "success",
+                `${user.fullName}'s logged in successfully!`
+              );
+              res.locals.user = user;
+              next();
+            } else {
+              req.flash(
+                "error",
+                "Your account or password is incorrect.Please try again or contact your system administrator!"
+              );
+              res.locals.redirect = "/users/login";
+              next();
+            }
+          }
+        );
+      })
+      .catch((error) => {
+        console.log(`Error logging in user: ${error.message}`);
+        next(error);
       });
   },
 };

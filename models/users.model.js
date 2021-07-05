@@ -1,6 +1,7 @@
 "use strict";
 
 const sql = require("../db");
+const bcrypt = require("bcrypt");
 
 const Users = function (user) {
   this.fullName = `${user.firstName} ${user.lastName}`;
@@ -23,10 +24,21 @@ Users.getAllUsers = () => {
 
 Users.create = (user) => {
   return new Promise((resolve, reject) => {
-    sql.query("INSERT INTO users SET ?", user, (err, res) => {
-      if (err) reject(err);
-      resolve(res);
-    });
+    let hashUser = user;
+
+    bcrypt
+      .hash(user.password, 10)
+      .then((hash) => {
+        hashUser.password = hash;
+        sql.query("INSERT INTO users SET ?", hashUser, (err, res) => {
+          if (err) reject(err);
+          const result = { ...res, user: user.fullName };
+          resolve(result);
+        });
+      })
+      .catch((err) => {
+        console.log(`Error in hashing password: ${err.message}`);
+      });
   });
 };
 
@@ -59,6 +71,19 @@ Users.delete = (id) => {
       resolve(res);
     });
   });
+};
+
+Users.findByEmail = (email) => {
+  return new Promise((resolve, reject) => {
+    sql.query("SELECT * FROM users WHERE email = ?", email, (err, res) => {
+      if (err) reject(err);
+      resolve(res);
+    });
+  });
+};
+
+Users.passwordComparison = (inputPassword, password) => {
+  return bcrypt.compare(inputPassword, password);
 };
 
 module.exports = Users;
